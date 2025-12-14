@@ -3,6 +3,7 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["fertigmeldung_ihrer_anlage_vorlage.pdf"]
 
 [[headers]]
   for = "/*"
