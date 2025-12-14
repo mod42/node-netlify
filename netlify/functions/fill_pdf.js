@@ -331,6 +331,8 @@ export async function handler(event) {
     } catch {
       mapping = {};
     }
+    // Ensure default checkbox stays checked even if template is missing
+    if (!mapping["Check Box12"]) mapping["Check Box12"] = "/Ja";
 
     const { order, contact } = await fetchOrderAndContact(orderNumber, token);
     Object.assign(mapping, orderContactToMapping(order, contact));
