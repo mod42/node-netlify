@@ -8,6 +8,15 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+function errorResponse(statusCode, message) {
+  return {
+    statusCode,
+    headers: { ...CORS_HEADERS, "Content-Type": "text/plain" },
+    body: String(message),
+    isBase64Encoded: false,
+  };
+}
+
 function unwrapFirst(resp) {
   if (resp && typeof resp === "object" && !Array.isArray(resp)) {
     for (const key of ["objects", "data", "result", "elements"]) {
@@ -306,13 +315,13 @@ export async function handler(event) {
     const apiKey = process.env.API_KEY;
     const auth = event.headers?.authorization || event.headers?.Authorization;
     if (apiKey && auth !== apiKey) {
-      return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
+      return errorResponse(401, "Unauthorized");
     }
     const body = event.body ? JSON.parse(event.body) : {};
     const orderNumber = body.orderNumber || process.env.SEVDESK_DEFAULT_ORDER;
     const token = body.token || process.env.SEVDESK_FIXED_TOKEN;
     if (!orderNumber || !token) {
-      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "orderNumber and token required" }) };
+      return errorResponse(400, "orderNumber and token required");
     }
 
     let mapping = {};
@@ -350,6 +359,6 @@ export async function handler(event) {
       isBase64Encoded: true,
     };
   } catch (err) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: String(err) }) };
+    return errorResponse(500, `Error: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
