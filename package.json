@@ -1,0 +1,14 @@
+{
+  "name": "pdf-filler-netlify-node",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node netlify/functions/fill_pdf.js",
+    "fill": "node netlify/functions/fill_pdf.js"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "yargs": "^17.7.2"
+  }
+}

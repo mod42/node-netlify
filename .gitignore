@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+
+# env/config
+.env
+.env.local
+.env.*
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS
+.DS_Store
+
+# Netlify/CLI
+.netlify/
