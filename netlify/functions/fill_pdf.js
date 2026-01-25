@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { PDFDocument } from "pdf-lib";
+import { PDFBool, PDFDocument, PDFName } from "pdf-lib";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -237,10 +237,14 @@ async function extractInverterPower(positions, token) {
   let best = { name: null, power: null };
   const parsePower = (txt) => {
     if (typeof txt !== "string") return null;
-    const m = txt.match(/([0-9]+(?:[.,][0-9]+)?)/);
-    if (!m) return null;
-    const num = parseFloat(m[1].replace(",", "."));
-    return isNaN(num) ? null : num;
+    // Prefer numbers not glued to letters (avoid picking model numbers like GEN24); take the last such number
+    const matches = [...txt.matchAll(/(?<![A-Za-z])([0-9]+(?:[.,][0-9]+)?)(?![A-Za-z])/g)];
+    if (matches.length) {
+      const last = matches[matches.length - 1][1];
+      const num = parseFloat(last.replace(",", "."));
+      return isNaN(num) ? null : num;
+    }
+    return null;
   };
   for (const pos of positions) {
     let candidates = [];
@@ -278,6 +282,16 @@ async function fillPdf(mapping) {
   const pdfBytes = await fs.readFile(formPath);
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const form = pdfDoc.getForm();
+
+  // Keep fields editable and let viewers re-render appearances
+  const acro = form.acroForm;
+  if (acro?.dict) {
+    acro.dict.set(PDFName.of("NeedAppearances"), PDFBool.True);
+  }
+  form.getFields().forEach((field) => {
+    if (field.disableReadOnly) field.disableReadOnly();
+  });
+
   Object.entries(mapping).forEach(([key, val]) => {
     if (val === undefined || val === null) return;
     let field;
@@ -300,11 +314,11 @@ async function fillPdf(mapping) {
 
 function buildFilename(mapping) {
   const name = mapping["Text1"];
-  if (typeof name !== "string") return "filled.pdf";
+  if (typeof name !== "string") return "Fertigmeldung_Ihrer_Anlage Vorlage.pdf";
   const parts = name.trim().split(/\s+/);
-  if (!parts.length) return "filled.pdf";
+  if (!parts.length) return "Fertigmeldung_Ihrer_Anlage Vorlage.pdf";
   const last = parts[parts.length - 1].replace(/[^A-Za-z0-9_-]+/g, "");
-  return last ? `Fertigmeldung_Ihrer_Anlage_${last}_Vorlage.pdf` : "filled.pdf";
+  return last ? `Fertigmeldung_Ihrer_Anlage ${last} Vorlage.pdf` : "Fertigmeldung_Ihrer_Anlage Vorlage.pdf";
 }
 
 export async function handler(event) {
